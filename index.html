@@ -16,7 +16,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 .pixel{font-family:'Press Start 2P',monospace}
 
 /* ===== EPIC INTRO ===== */
-#intro-gate{display:none !important}
+#intro-gate{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:10000;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-direction:column;gap:20px}
 #intro-gate.gone{display:none}
 #intro-gate .gate-text{font-family:'Press Start 2P',monospace;color:var(--teal);font-size:clamp(14px,3vw,24px);text-shadow:0 0 20px var(--teal),0 0 40px var(--purple);animation:gatePulse 1.5s ease-in-out infinite alternate}
 @keyframes gatePulse{0%{opacity:.6;transform:scale(.97)}100%{opacity:1;transform:scale(1.03)}}
@@ -78,7 +78,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 @keyframes bubblePop{0%{opacity:0;transform:translateX(-50%) translateY(5px) scale(.5)}10%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-10px) scale(.8)}}
 
 /* ===== MAIN ===== */
-.main-content{opacity:1 !important;transition:opacity .8s}.main-content.show{opacity:1}
+.main-content{opacity:0;transition:opacity .8s}.main-content.show{opacity:1}
 
 /* ===== THE STATION — THRONGLETS SIDE VIEW ===== */
 #station{width:100%;max-width:1200px;margin:0 auto;position:relative;border-radius:16px;overflow:hidden;box-shadow:0 0 60px rgba(153,69,255,.15),0 0 120px rgba(0,0,0,.5)}
@@ -536,50 +536,8 @@ footer{border-top:1px solid #2a2a3a;padding:30px 16px;text-align:center;max-widt
 .footer-links a{color:var(--dim);text-decoration:none;font-size:13px;transition:color .3s}
 .footer-links a:hover{color:var(--teal)}
 .copyright{font-size:11px;color:#444}
-/* PAPA'S RULE: NO DEBUG DOTS */
-.refresh-dot,
-.status-dot,
-.debug-dot,
-.dev-dot { 
-  display: none !important; 
-  visibility: hidden !important; 
-}
-
-/* ===== PAPA'S RULE: NO DEBUG OVERLAYS ON LIVE SITE ===== */
-/* Force hide ANY development/debug interfaces */
-*[data-polling],
-*[class*="polling"], 
-*[id*="polling"],
-*[class*="debug"],
-*[id*="debug"], 
-*[class*="dev-"],
-*[id*="dev-"],
-.polling-mode,
-.polling-indicator,
-.poll-status,
-.debug-overlay,
-.dev-tools,
-.dev-panel,
-.debug-mode,
-.debug-info,
-.refresh-indicator,
-.refresh-dot,
-.status-indicator,
-.monitoring-panel,
-.admin-panel,
-.dev-console,
-[data-debug],
-[data-dev] {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  position: absolute !important;
-  left: -9999px !important;
-  top: -9999px !important;
-  width: 0 !important;
-  height: 0 !important;
-  z-index: -1 !important;
-}
+.refresh-dot{position:fixed;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--teal);opacity:0;transition:opacity .3s;z-index:100}
+.refresh-dot.active{opacity:1}
 
 @media(max-width:768px){
   .room-container{padding-bottom:70%}
@@ -1292,7 +1250,7 @@ footer{border-top:1px solid #2a2a3a;padding:30px 16px;text-align:center;max-widt
   <p class="copyright">© 2026 GIZMO — Autonomous AI Agent on Solana</p>
 </footer>
 
-<!-- PAPA'S SITE: CLEAN AND PROFESSIONAL -->
+<div class="refresh-dot" id="refreshDot"></div>
 </div>
 
 <script>
@@ -1501,31 +1459,6 @@ function initChart(){
   pnlChart=new Chart(ctx,{type:'line',data:{labels:[],datasets:[{label:'Portfolio Value (USD)',data:[],borderColor:'#14F195',backgroundColor:'rgba(20,241,149,0.1)',fill:true,tension:.4,pointRadius:0,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{ticks:{color:'#666',font:{size:9},callback:v=>'$'+v.toFixed(0)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
 }
 
-// ===== PAPA'S PRODUCTION SAFEGUARDS =====
-const IS_PRODUCTION = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
-
-// Disable development tools in production
-if (IS_PRODUCTION) {
-  // Block common dev tools
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
-      e.preventDefault();
-      return false;
-    }
-  });
-  
-  // Disable right click context menu in production
-  document.addEventListener('contextmenu', (e) => e.preventDefault());
-  
-  // Clean console
-  setTimeout(() => {
-    console.clear();
-    console.log('%c🦞 GIZMO STATION 🦞', 'color: #14F195; font-size: 16px; font-weight: bold;');
-    console.log('%cAutonomous AI Agent on Solana', 'color: #9945FF; font-size: 12px;');
-    console.log('%c🚫 Development tools disabled on live site', 'color: #ff4444; font-size: 10px;');
-  }, 1000);
-}
-
 // ===== LIVE DATA =====
 const GIZMO_CA='8HGer4vRWZMu5MUYU7ACPb4uanKgBewaXJZscLagpump';
 const PUNCH_CA='NV2RYH954cTJ3ckFUpvfqaQXU4ARqqDH3562nFSpump';
@@ -1548,56 +1481,32 @@ let gizmoTokenBalance=0,punchTokenBalance=0,bloodnutTokenBalance=0,loreguyTokenB
 
 async function fetchSolPrice(){
   // Try Jupiter price API first (most reliable, no rate limit)
-  try{
-    const r=await fetch('https://api.jup.ag/price/v2?ids=So11111111111111111111111111111111111111112');
-    const d=await r.json();
-    if(d.data&&d.data['So11111111111111111111111111111111111111112']){
-      solPriceUsd=parseFloat(d.data['So11111111111111111111111111111111111111112'].price);
-      return;
-    }
-  }catch(e){
-    if(!IS_PRODUCTION) console.warn('Jupiter API failed:', e.message);
-  }
+  try{const r=await fetch('https://api.jup.ag/price/v2?ids=So11111111111111111111111111111111111111112');const d=await r.json();if(d.data&&d.data['So11111111111111111111111111111111111111112']){solPriceUsd=parseFloat(d.data['So11111111111111111111111111111111111111112'].price);return}}catch(e){}
   // Fallback: use Drift DLOB oracle
-  try{
-    if(perpMarkPriceUsd>0){
-      solPriceUsd=perpMarkPriceUsd;
-      return;
-    }
-  }catch(e){
-    if(!IS_PRODUCTION) console.warn('Drift fallback failed:', e.message);
-  }
+  try{if(perpMarkPriceUsd>0){solPriceUsd=perpMarkPriceUsd;return}}catch(e){}
   // Fallback: CoinGecko
-  try{
-    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
-    const d=await r.json();
-    solPriceUsd=d.solana.usd;
-  }catch(e){
-    if(!IS_PRODUCTION) console.warn('CoinGecko fallback failed:', e.message);
-    // Graceful fallback to prevent site breaking
-    solPriceUsd = solPriceUsd || 85; // Use last known price or reasonable default
-  }
+  try{const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');const d=await r.json();solPriceUsd=d.solana.usd}catch(e){console.error('SOL price error:',e)}
 }
 
 async function fetchDexPrices(){
-  try{const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${GIZMO_CA}`);const d=await r.json();if(d.pairs&&d.pairs.length>0){gizmoPriceUsd=parseFloat(d.pairs[0].priceUsd||0);const pn=parseFloat(d.pairs[0].priceNative||0);if(pn>0&&gizmoPriceUsd>0&&solPriceUsd===0)solPriceUsd=gizmoPriceUsd/pn}}catch(e){}
-  try{const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${PUNCH_CA}`);const d=await r.json();if(d.pairs&&d.pairs.length>0){punchPriceUsd=parseFloat(d.pairs[0].priceUsd||0);const pn=parseFloat(d.pairs[0].priceNative||0);if(pn>0&&punchPriceUsd>0&&solPriceUsd===0)solPriceUsd=punchPriceUsd/pn}}catch(e){}
-  try{const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${BLOODNUT_CA}`);const d=await r.json();if(d.pairs&&d.pairs.length>0)bloodnutPriceUsd=parseFloat(d.pairs[0].priceUsd||0)}catch(e){}
+  try{const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${GIZMO_CA}`);const d=await r.json();if(d.pairs&&d.pairs.length>0){gizmoPriceUsd=parseFloat(d.pairs[0].priceUsd||0);const pn=parseFloat(d.pairs[0].priceNative||0);if(pn>0&&gizmoPriceUsd>0&&solPriceUsd===0)solPriceUsd=gizmoPriceUsd/pn}}catch(e){console.error('GIZMO price error:',e)}
+  try{const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${PUNCH_CA}`);const d=await r.json();if(d.pairs&&d.pairs.length>0){punchPriceUsd=parseFloat(d.pairs[0].priceUsd||0);const pn=parseFloat(d.pairs[0].priceNative||0);if(pn>0&&punchPriceUsd>0&&solPriceUsd===0)solPriceUsd=punchPriceUsd/pn}}catch(e){console.error('PUNCH price error:',e)}
+  try{const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${BLOODNUT_CA}`);const d=await r.json();if(d.pairs&&d.pairs.length>0)bloodnutPriceUsd=parseFloat(d.pairs[0].priceUsd||0)}catch(e){console.error('BLOODNUT price error:',e)}
   // LOREGUY closed — no price fetch needed
-  try{const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${JAWZ_CA}`);const d=await r.json();if(d.pairs&&d.pairs.length>0)jawzPriceUsd=parseFloat(d.pairs[0].priceUsd||0)}catch(e){}
+  try{const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${JAWZ_CA}`);const d=await r.json();if(d.pairs&&d.pairs.length>0)jawzPriceUsd=parseFloat(d.pairs[0].priceUsd||0)}catch(e){console.error('JAWZ price error:',e)}
 }
 
 async function fetchPerpPrice(){
-  try{const r=await fetch('https://dlob.drift.trade/l2?marketIndex=0&marketType=perp&depth=1');const d=await r.json();if(d.asks&&d.asks[0]&&d.bids&&d.bids[0]){const ask=parseInt(d.asks[0].price)/1e6,bid=parseInt(d.bids[0].price)/1e6;perpMarkPriceUsd=(ask+bid)/2}else if(d.markPrice){perpMarkPriceUsd=parseInt(d.markPrice)/1e6}}catch(e){}
-  try{const r=await fetch('https://dlob.drift.trade/l2?marketIndex=1&marketType=perp&depth=1');const d=await r.json();if(d.asks&&d.asks[0]&&d.bids&&d.bids[0]){const ask=parseInt(d.asks[0].price)/1e6,bid=parseInt(d.bids[0].price)/1e6;btcMarkPriceUsd=(ask+bid)/2}else if(d.markPrice){btcMarkPriceUsd=parseInt(d.markPrice)/1e6}}catch(e){}
-  try{const r=await fetch('https://dlob.drift.trade/l2?marketIndex=2&marketType=perp&depth=1');const d=await r.json();if(d.asks&&d.asks[0]&&d.bids&&d.bids[0]){const ask=parseInt(d.asks[0].price)/1e6,bid=parseInt(d.bids[0].price)/1e6;ethMarkPriceUsd=(ask+bid)/2}else if(d.markPrice){ethMarkPriceUsd=parseInt(d.markPrice)/1e6}}catch(e){}
+  try{const r=await fetch('https://dlob.drift.trade/l2?marketIndex=0&marketType=perp&depth=1');const d=await r.json();if(d.asks&&d.asks[0]&&d.bids&&d.bids[0]){const ask=parseInt(d.asks[0].price)/1e6,bid=parseInt(d.bids[0].price)/1e6;perpMarkPriceUsd=(ask+bid)/2}else if(d.markPrice){perpMarkPriceUsd=parseInt(d.markPrice)/1e6}}catch(e){console.error('SOL perp price error:',e)}
+  try{const r=await fetch('https://dlob.drift.trade/l2?marketIndex=1&marketType=perp&depth=1');const d=await r.json();if(d.asks&&d.asks[0]&&d.bids&&d.bids[0]){const ask=parseInt(d.asks[0].price)/1e6,bid=parseInt(d.bids[0].price)/1e6;btcMarkPriceUsd=(ask+bid)/2}else if(d.markPrice){btcMarkPriceUsd=parseInt(d.markPrice)/1e6}}catch(e){console.error('BTC perp price error:',e)}
+  try{const r=await fetch('https://dlob.drift.trade/l2?marketIndex=2&marketType=perp&depth=1');const d=await r.json();if(d.asks&&d.asks[0]&&d.bids&&d.bids[0]){const ask=parseInt(d.asks[0].price)/1e6,bid=parseInt(d.bids[0].price)/1e6;ethMarkPriceUsd=(ask+bid)/2}else if(d.markPrice){ethMarkPriceUsd=parseInt(d.markPrice)/1e6}}catch(e){console.error('ETH perp price error:',e)}
 }
 
 async function fetchWalletBalance(){
   try{
     const r=await fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'getBalance',params:[WALLET]})});
     const d=await r.json();walletSol=(d.result?.value||0)/1e9;
-  }catch(e){}
+  }catch(e){console.error('Wallet balance error:',e)}
 }
 
 async function fetchTokenBalances(){
@@ -1624,7 +1533,7 @@ async function fetchTokenBalances(){
           if(mint===USDC_MINT) usdcBalance=amt;
         }
       }
-    }catch(e){}
+    }catch(e){console.error('Token fetch error ('+prog+'):',e)}
   }
 }
 
@@ -1636,6 +1545,7 @@ function fmtNum(n,dec){
 }
 
 function updateUI(){
+  const dot=document.getElementById('refreshDot');dot.classList.add('active');setTimeout(()=>dot.classList.remove('active'),1000);
 
   document.getElementById('solBalance').textContent=walletSol.toFixed(4)+' SOL';
   document.getElementById('solPrice').textContent='$'+solPriceUsd.toFixed(2);
@@ -1839,69 +1749,7 @@ function updateStats(){
   document.getElementById('statsTradeHistory').innerHTML=thHTML;
 }
 
-// ===== PAPA'S ENFORCEMENT: NO DEBUG ELEMENTS ON LIVE SITE =====
-function removeAllDebugElements() {
-  // Remove any text-based debug indicators
-  const allElems = document.querySelectorAll('*');
-  for (const el of allElems) {
-    const text = el.textContent?.toLowerCase() || '';
-    const id = el.id?.toLowerCase() || '';
-    const className = el.className?.toLowerCase() || '';
-    
-    // Check for debug/dev text content
-    const debugTerms = ['polling mode', 'debug', 'dev mode', 'admin', 'console', 'refresh dot', 'status indicator'];
-    const hasDebugText = debugTerms.some(term => text.includes(term));
-    
-    // Check for debug attributes
-    const hasDebugAttrs = id.includes('debug') || id.includes('dev') || id.includes('poll') || 
-                         className.includes('debug') || className.includes('dev') || className.includes('poll') ||
-                         el.hasAttribute('data-debug') || el.hasAttribute('data-dev');
-    
-    if (hasDebugText || hasDebugAttrs) {
-      el.remove(); // Papa wants them GONE
-    }
-  }
-  
-  // Remove console logs in production
-  if (window.location.hostname !== 'localhost') {
-    console.log = function() {};
-    console.warn = function() {};
-    console.error = function() {};
-    console.debug = function() {};
-    console.info = function() {};
-  }
-}
-
-document.addEventListener('DOMContentLoaded',()=>{
-  initChart();
-  refresh().then(()=>updateStats());
-  
-  // ===== PAPA'S ENFORCEMENT: CLEAN SITE ALWAYS =====
-  removeAllDebugElements();
-  
-  // Aggressive monitoring for ANY debug elements (Papa's watchdog)
-  const observer = new MutationObserver(() => {
-    removeAllDebugElements();
-  });
-  observer.observe(document.body, { 
-    childList: true, 
-    subtree: true, 
-    attributes: true, 
-    attributeOldValue: true 
-  });
-  
-  // Regular cleanup + data refresh
-  setInterval(()=>{
-    refresh().then(()=>updateStats());
-    // Papa's cleanup on EVERY refresh
-    removeAllDebugElements();
-  }, 15000); // More frequent cleanup
-  
-  // Extra aggressive cleanup every 5 seconds
-  setInterval(() => {
-    removeAllDebugElements();
-  }, 5000);
-});
+document.addEventListener('DOMContentLoaded',()=>{initChart();refresh().then(()=>updateStats());setInterval(()=>{refresh().then(()=>updateStats())},15000)});
 </script>
 </body>
 </html>
