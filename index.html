@@ -1536,7 +1536,7 @@ const JAWZ_CA='GJmF68t5HXM1U1j2nE4Trvh7vH5XeXys7MW4UN5Bpump';
 const ORAMAMA_CA='B6CdHKLm1XRxxgTnK9cNvT3DA75hPc9WUjTkxVUupump';
 const TRENCH_CA='BzyKa1FGjs2EUpu3GGDibY4xdygn5evAiRboKmETpump';
 const WALLET='FXdMNyRo5CqfG3yRWCcNu163FpnSusdZSYecsB76GAkn';
-const RPC='https://mainnet.helius-rpc.com/?api-key=2de73660-14b8-412a-9ff2-8e6989c53266';
+const RPC='https://api.mainnet-beta.solana.com';
 const GIZMO_MINT=GIZMO_CA, PUNCH_MINT=PUNCH_CA, BLOODNUT_MINT=BLOODNUT_CA, LOREGUY_MINT=LOREGUY_CA, JAWZ_MINT=JAWZ_CA, ORAMAMA_MINT=ORAMAMA_CA, TRENCH_MINT=TRENCH_CA;
 
 // Perps position config
@@ -1607,7 +1607,7 @@ async function fetchTokenBalances(){
   const programs=['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA','TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'];
   for(const prog of programs){
     try{
-      const r=await fetch('https://mainnet.helius-rpc.com/?api-key=2de73660-14b8-412a-9ff2-8e6989c53266',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      const r=await fetch('https://api.mainnet-beta.solana.com',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
         jsonrpc:'2.0',id:1,method:'getTokenAccountsByOwner',
         params:[WALLET,{programId:prog},{encoding:'jsonParsed'}]
       })});
